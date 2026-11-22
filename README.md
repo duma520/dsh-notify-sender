@@ -6,7 +6,7 @@
 
 **解决什么问题**：官方推送类插件习惯「一次发所有通道所有账号」，账号一多就变成刷屏，你想只发一个人时反而做不到。本插件把粒度交给你：**可以只勾一个，也可以勾几个，也可以全选**——勾谁就发谁，不多不少。
 
-> 当前版本 **v0.2.7**（2026-11-20）。插件名 `@duma520/dsh-notify-sender`，纯 JS 零构建，装在本机 DSH 的 `desktop` profile 里。
+> 当前版本 **v0.2.8**（2026-11-22）。插件名 `@duma520/dsh-notify-sender`，纯 JS 零构建，装在本机 DSH 的 `desktop` profile 里。
 
 > 本插件**不建立任何连接、不接收任何消息**，也不保存任何凭据。它只是一个「借用者」：通道实现来自 `@duma520/dsh-push-hub`，账号来自本机已有的配置文件，凭据只在发送的那一瞬间经过内存。
 
@@ -704,6 +704,33 @@ curl http://127.0.0.1:30004/@duma520/dsh-notify-sender/api/hello
 
 **为什么不能「先让它可点，点了再报错」**：`/send` 是整体校验的——只要选中里有一个不可用，整批拒绝。放行一张必然失败的卡片，等于让你一路选到点发送时才被整体打回。
 
+### 症状：功能都正常，但界面变成浏览器默认样式（按钮是灰方块、输入框没边框）
+
+**这几乎一定是样式表没生效，不是面板坏了。** 判断依据：账号加载、选择、发送全部正常，只是「不好看」——纯浏览器默认渲染。
+
+**两个已知成因（v0.2.8 都已修）：**
+
+1. **热重载把样式节点删掉了。** 插件换新代码时，新实例先 apply（看到旧 `<style>` 还在 → 认为样式已就位），紧接着旧实例 dispose。如果旧实例的清理函数里有 `style.remove()`，页面上就一份样式都不剩，且刷新前不会自愈。现在 `installStyle()` 返回**空清理函数**，样式节点留着不删。
+2. **面板被挂进了 shadow root。** 主文档 `document.head` 里的 `<style>` 对 shadow root 内部完全无效。现在每个入口的根节点都挂了 `useRootStyle()`，它会 `getRootNode()` 找到真实根，往那个根里补一份（同一个 root 只补一次，用 `data-ns-css="1"` 标记幂等）。
+
+**怎么确认到底插进去没有：**
+
+```bash
+curl "http://127.0.0.1:17116/@duma520/dsh-notify-sender/api/hello"
+```
+
+看返回里的 `client.style`：
+
+| 字段 | 含义 |
+|---|---|
+| `roots` | `["document"]` 正常；`["document","shadow"]` 说明面板确实在 shadow root 里，已补第二份 |
+| `rules` | 解析出的 CSS 规则条数。当前版本应为 **63**；是 `0` 说明 `<style>` 插进去了但文本没被解析（CSS 语法坏了） |
+| `error` | 非空说明读 `style.sheet.cssRules` 被拒（跨域/安全策略），此时样式可能仍然生效，只是读不到条数 |
+
+`stage` 为 `style-ensured` 的那条心跳就是面板挂载后补样式时发的。
+
+**如果你刚升级完看到旧样子**：先按一次 Ctrl+R。样式节点是页面级的，插件换代码不会让老页面重绘。
+
 ### 症状：预览通过，真发失败
 
 **原因**：预览只算分块，不真的碰网络。真正的失败发生在平台侧。
@@ -797,6 +824,7 @@ New-Item -ItemType Junction `
 
 | 版本 | 日期 | 一句话变更 |
 |---|---|---|
+| v0.2.8 | 2026-11-22 | 修「功能正常但样式全丢」：卸载不再删样式节点（热重载竞态）+ 面板/设置区自动补样式进 shadow root，并把样式诊断写进 `/api/hello` |
 | v0.2.7 | 2026-11-20 | 修「有些账号点了没反应」：webhook 型通道（群晖 Chat / 钉钉 / 企业微信）不再被误判成「缺发送目标」，卡片写明真实原因与修法 |
 | v0.2.6 | 2026-11-20 | 选中态一眼可辨：卡片加底色+2px 描边+「✓ 已选」角标，新增已选清单（可点 × 取消）、分组头显示已选数 |
 | v0.2.5 | 2026-11-20 | 加客户端心跳 `/api/hello`：一句话判定「这个页面到底跑没跑过插件的 apply()」，六个入口各报注册成败 |
@@ -856,6 +884,7 @@ dsh-notify-sender/
 │   └── paths.js            # 路径解析、push-hub 定位、设置读写
 ├── scaffold/               # 开发脚本（不进 Release）
 │   ├── test_accounts.mjs       # 账号聚合 + 泄漏检查 + dry-run
+│   ├── test_style_root.cjs     # 样式注入回归：不删节点 + shadow root 补样式（v0.2.8）
 │   ├── test_target_rule.mjs    # 「哪些通道必须填发送目标」回归（v0.2.7）
 │   ├── test_client_toplevel.mjs # 客户端顶层声明检查（防 combo 二次执行报错）
 │   ├── test_select_ui.cjs      # 选中态九条断言（v0.2.6）
@@ -878,10 +907,13 @@ node scaffold/test_target_rule.mjs
 # 3. 客户端顶层声明检查 + 选中态断言
 node scaffold/test_client_toplevel.mjs && node scaffold/test_select_ui.cjs
 
-# 4. 宿主半身注册冒烟（不连真 DSH，用假 ctx）
+# 4. 样式注入：卸载不删节点 + shadow root 也能补样式（v0.2.8）
+node scaffold/test_style_root.cjs
+
+# 5. 宿主半身注册冒烟（不连真 DSH，用假 ctx）
 node scaffold/test_host_smoke.mjs
 
-# 5. 全部语法检查
+# 6. 全部语法检查
 node --check lib/index.js && node --check lib/client.js && \
 node --check lib/accounts.js && node --check lib/sender.js && \
 node --check lib/history.js && node --check lib/paths.js

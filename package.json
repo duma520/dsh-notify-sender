@@ -1,6 +1,6 @@
 {
   "name": "@duma520/dsh-notify-sender",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "通知发送器：只发不收。复用已接通通道与账号，逐个挑选用哪个账号把通知发出去",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "typecheck": "node --check lib/index.js && node --check lib/client.js && node --check lib/accounts.js && node --check lib/sender.js && node --check lib/history.js && node --check lib/paths.js",
-    "test": "node scaffold/test_accounts.mjs && node scaffold/test_target_rule.mjs && node scaffold/test_client_toplevel.mjs && node scaffold/test_select_ui.cjs && node scaffold/test_host_smoke.mjs",
+    "test": "node scaffold/test_accounts.mjs && node scaffold/test_target_rule.mjs && node scaffold/test_client_toplevel.mjs && node scaffold/test_select_ui.cjs && node scaffold/test_style_root.cjs && node scaffold/test_host_smoke.mjs",
     "build": "node -e \"console.log('无需构建：手写 ModuleLoader bundle，零构建产物')\"",
     "pack": "npm pack --dry-run",
     "verify": "npx --yes dsh-plugin-standard@2 . --json"
