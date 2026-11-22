@@ -940,4 +940,4 @@ SMOKE OK
 
 ## 14. 许可
 
-BSD-3-Clause。见 [LICENSE](./LICENSE)。
+AGPL-3.0。见 [LICENSE](./LICENSE)。
