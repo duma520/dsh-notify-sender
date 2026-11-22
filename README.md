@@ -873,7 +873,7 @@ dsh-notify-sender/
 ├── package.json            # 包元数据，dsh.client 声明浏览器半身
 ├── cordis.patch.yml        # 让 profile 自动加载本插件
 ├── README.md               # 本文
-├── LICENSE                 # BSD-3-Clause
+├── LICENSE                 # AGPL-3.0
 ├── 软件升级迭代记录.md      # 版本变更记录
 ├── lib/
 │   ├── index.js            # 宿主半身：API + 3 个工具
@@ -941,3 +941,12 @@ SMOKE OK
 ## 14. 许可
 
 AGPL-3.0。见 [LICENSE](./LICENSE)。
+
+## 许可
+
+本项目采用 **GNU Affero General Public License v3.0（AGPL-3.0）** 发布。
+
+- 完整许可证条文见仓库根目录 [LICENSE](LICENSE)。
+- 你可以自由使用、修改、分发，包括用于商业用途，无需另行获得授权。
+- 若你修改后分发，或以网络服务方式提供本软件，必须按 AGPL-3.0 公开相应源代码。
+- 本仓库自 2026-11-23 起改用 AGPL-3.0；此前已按 MIT / BSD-3-Clause 发布的版本，其接收者依原许可证获得的授权继续有效。
